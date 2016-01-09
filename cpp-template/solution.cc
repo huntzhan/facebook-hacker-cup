@@ -31,7 +31,7 @@ using namespace std;
 
 // }}}
 
-const string kInputFilename = "";
+const string kInputFilename = "input.txt";
 const string kOutputFilename = "output.txt";
 
 ifstream fin(kInputFilename);
@@ -40,9 +40,6 @@ ofstream fout(kOutputFilename);
 
 
 int main() {
-  // deal with input.
 
-  // solve the probleam.
-
-  // deal with output.
+  fout.close();
 }
