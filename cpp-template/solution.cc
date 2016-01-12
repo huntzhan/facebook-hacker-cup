@@ -40,6 +40,13 @@ ofstream fout(kOutputFilename);
 
 
 int main() {
+  int T;
+  fin >> T;
+
+  for (int case_idx = 1; case_idx <= T; ++case_idx) {
+
+    fout << "Case #" << case_idx << ": " <<  << endl;
+  }
 
   fout.close();
 }
