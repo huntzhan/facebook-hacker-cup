@@ -46,8 +46,19 @@ double CalculateIntervalExpected(
   int r = min(b, B);
   int ldiff = l - a;
   int rdiff = r - a;
-  return static_cast<double>(ldiff + rdiff) / 2 *
+  return 1.0 *
+         (ldiff + rdiff) / 2 *
          (r - l) / (B - A);
+}
+
+void MoveForwardInterval(
+    const vector<int> &C,
+    int &interval_begin, int &interval_end, int &step) {
+  const int N = C.size();
+
+  step = (step + 1) % N;
+  interval_begin = interval_end;
+  interval_end = interval_begin + C[step];
 }
 
 int main() {
@@ -72,9 +83,7 @@ int main() {
     int interval_begin = yacht_price * (A / yacht_price);
     int interval_end = interval_begin + C[step];
     while (interval_end < A) {
-      ++step;
-      interval_begin = interval_end;
-      interval_end = interval_begin + C[step];
+      MoveForwardInterval(C, interval_begin, interval_end, step);
     }
     
     // first interval.
@@ -83,15 +92,14 @@ int main() {
         A, B);
 
     // move to the next step.
-    step = (step + 1) % N;
-    interval_begin = interval_end;
-    interval_end = interval_begin + C[step];
+    MoveForwardInterval(C, interval_begin, interval_end, step);
 
     // skip intermediate intervals.
     if (interval_end <= B) {
       int intermediate_size = (B - interval_begin) / yacht_price;
       for (int i = 0; i < N; ++i) {
-        expected += static_cast<double>(C[i]) / 2 *
+        expected += 1.0 *
+                    C[i] / 2 *
                     (intermediate_size * C[i]) / (B - A);
       }
       // move interval forward.
@@ -104,9 +112,7 @@ int main() {
           interval_begin, interval_end,
           A, B);
       // move to next step.
-      step = (step + 1) % N;
-      interval_begin = interval_end;
-      interval_end = interval_begin + C[step];
+      MoveForwardInterval(C, interval_begin, interval_end, step);
     }
 
     fout << fixed << setprecision(9)
