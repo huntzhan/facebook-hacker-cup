@@ -37,8 +37,17 @@ const string kOutputFilename = "output.txt";
 ifstream fin(kInputFilename);
 ofstream fout(kOutputFilename);
 
-double CalExpect(const int begin, const int end, const long long total) {
-  return static_cast<double>(1LL * end * end - 1LL * begin * begin) / (2 * total);
+double CalculateIntervalExpected(
+    // accumulate interval.
+    const int a, const int b,
+    // gloabl interval.
+    const int A, const int B) {
+  int l = max(a, A);
+  int r = min(b, B);
+  int ldiff = l - a;
+  int rdiff = r - a;
+  return static_cast<double>(ldiff + rdiff) / 2 *
+         (r - l) / (B - A);
 }
 
 int main() {
@@ -56,76 +65,52 @@ int main() {
       yacht_price += C[i];
     }
 
-    // [begin, end) pairs.
-    vector<pair<int, int>> non_full_intervals;
-
-    // ignore the amount of money spent on yachts.
-    int shift_money = A - (A % yacht_price);
-    A -= shift_money;
-    B -= shift_money;
-
-    int money = A;
+    double expected = 0.0;
 
     int step = 0;
-    while (money >= C[step]) {
-      money -= C[step];
+    // locate first interleave interval.
+    int interval_begin = yacht_price * (A / yacht_price);
+    int interval_end = interval_begin + C[step];
+    while (interval_end < A) {
       ++step;
+      interval_begin = interval_end;
+      interval_end = interval_begin + C[step];
     }
-    if (money > 0) {
-      // be careful with the corner case.
-      int interval_end = min(C[step], B - (A - money));
-      auto interval = make_pair(money, interval_end);
-      non_full_intervals.push_back(interval);
-      // money points to the next step.
-      money = A + (interval.second - interval.first);
-      step = (step + 1) % N;
-    }
+    
+    // first interval.
+    expected += CalculateIntervalExpected(
+        interval_begin, interval_end,
+        A, B);
 
-    // skip intermedia full steps.
-    long long intermediate_size = (B - money) / yacht_price;
-    if (intermediate_size > 0) {
-      money += intermediate_size * yacht_price;
-    }
+    // move to the next step.
+    step = (step + 1) % N;
+    interval_begin = interval_end;
+    interval_end = interval_begin + C[step];
 
-    // count tailing steps.
-    vector<int> tailing_step_indices;
-    while (money < B) {
-      if (money + C[step] <= B) {
-        tailing_step_indices.push_back(step);
-        money += C[step];
-      } else {
-        auto interval = make_pair(0, B - money);
-        non_full_intervals.push_back(interval);
-        // exit while loop.
-        money = B;
+    // skip intermediate intervals.
+    if (interval_end <= B) {
+      int intermediate_size = (B - interval_begin) / yacht_price;
+      for (int i = 0; i < N; ++i) {
+        expected += static_cast<double>(C[i]) / 2 *
+                    (intermediate_size * C[i]) / (B - A);
       }
+      // move interval forward.
+      interval_begin += intermediate_size * yacht_price;
+      interval_end = interval_begin + C[step];
+    }
+
+    while (interval_begin < B) {
+      expected += CalculateIntervalExpected(
+          interval_begin, interval_end,
+          A, B);
+      // move to next step.
       step = (step + 1) % N;
+      interval_begin = interval_end;
+      interval_end = interval_begin + C[step];
     }
 
-    // create PDF.
-    long long total = 0;
-    for (const auto &interval : non_full_intervals) {
-      total += interval.second - interval.first;
-    }
-    for (int i = 0; i < N; ++i) {
-      total += intermediate_size * C[i];
-    }
-    for (const int step : tailing_step_indices) {
-      total += C[step];
-    }
-
-    double expected_amount = 0.0;
-    for (const auto &interval : non_full_intervals) {
-      expected_amount += CalExpect(interval.first, interval.second, total);
-    }
-    for (int i = 0; i < N; ++i) {
-      expected_amount += intermediate_size * CalExpect(0, C[i], total);
-    }
-    for (const int step : tailing_step_indices) {
-      expected_amount += CalExpect(0, C[step], total);
-    }
-
-    fout << "Case #" << case_idx << ": " << fixed << setprecision(9) << expected_amount << endl;
+    fout << fixed << setprecision(9)
+         << "Case #" << case_idx << ": " << expected << endl;
   }
 
   fout.close();
