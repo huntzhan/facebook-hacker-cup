@@ -78,8 +78,9 @@ int main() {
       price_dp[i] = 0.0;
     }
     // price_dp[i] = max(price_dp[j] + choose_k[i - j], 0 <= j < i).
-    for (int i = 1; i <= N; ++i) {
-      for (int j = 0; j < i; ++j) {
+    for (int i = K; i <= N; ++i) {
+      price_dp[i] = choose_k[i];
+      for (int j = K; j < i; ++j) {
         price_dp[i] = max(price_dp[i], price_dp[j] + choose_k[i - j]);
       }
     }
