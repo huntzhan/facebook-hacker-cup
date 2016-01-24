@@ -37,65 +37,55 @@ const string kOutputFilename = "output.txt";
 ifstream fin(kInputFilename);
 ofstream fout(kOutputFilename);
 
-double Choose(int n, int k) {
-  if (k > n) {
-    return 0;
-  }
-  if (k * 2 > n) {
-    k = n - k;
-  }
-  if (k == 0) {
-    return 1;
-  }
 
-  double ret = n;
-  for (int i = k; i >= 2; --i) {
-    ret = ret * (n - i + 1) / i;
-  }
-  return ret;
-}
-
-double Possibility(const int n, const int k, const double p) {
-  long double ret = 0.0;
-  for (int i = k; i <= n; ++i) {
-    ret += Choose(n, i) * pow(p, i) * pow(1 - p, n - i);
-  }
-  return ret;
-}
 
 int main() {
   int T;
   fin >> T;
-
-  cout << Possibility(3000, 50, 0.987) << endl;
-  cout << Possibility(2000, 50, 0.987) << endl;
-  cout << Possibility(1000, 50, 0.987) << endl;
-  cout << Possibility(300, 50, 0.987) << endl;
-  cout << Possibility(200, 50, 0.987) << endl;
-  cout << Possibility(100, 50, 0.987) << endl;
-  cout << Possibility(50, 50, 0.987) << endl;
 
   for (int case_idx = 1; case_idx <= T; ++case_idx) {
     int N, K;
     double p;
     fin >> N >> K >> p;
 
-    double max_expected = 0;
-    for (int group_size = K; group_size <= N; group_size += K) {
-      int group_num = N / group_size;
-      int real_group_size = group_size + (N % K) / group_num;
-      int left_inc_size = (N % K) % group_num;
-
-      double cur_expected = 0.0;
-
-      cur_expected += left_inc_size * Possibility(real_group_size + 1, K, p);
-      cur_expected += (group_num - left_inc_size) *
-                      Possibility(real_group_size, K, p);
-
-      max_expected = max(max_expected, cur_expected);
+    vector<vector<double>> choose_dp(N + 1, vector<double>(N + 1, 0.0));
+    // init.
+    choose_dp[0][0] = 1.0;
+    for (int i = 1; i <= N; ++i) {
+      choose_dp[i][0] = (1 - p) * choose_dp[i - 1][0];
+    }
+    // choose_dp[i][j]: i choose j.
+    // choose_dp[i][j] = p * choose_dp[i - 1][j - 1] +
+    //                   (1 - p) * choose_dp[i - 1][j]
+    for (int i = 1; i <= N; ++i) {
+      for (int j = 1; j <= i; ++j) {
+        choose_dp[i][j] = p * choose_dp[i - 1][j - 1] +
+                          (1 - p) * choose_dp[i - 1][j];
+      }
     }
 
-    fout << "Case #" << case_idx << ": " << max_expected << endl;
+    // choose_k[i]: sigma(i choose j, K <= j <= i).
+    vector<double> choose_k(N + 1, 0.0);
+    for (int i = K; i <= N; ++i) {
+      for (int j = K; j <= i; ++j) {
+        choose_k[i] += choose_dp[i][j];
+      }
+    }
+
+    vector<double> price_dp(N + 1);
+    // init.
+    for (int i = 0; i < K; ++i) {
+      price_dp[i] = 0.0;
+    }
+    // price_dp[i] = max(price_dp[j] + choose_k[i - j], 0 <= j < i).
+    for (int i = 1; i <= N; ++i) {
+      for (int j = 0; j < i; ++j) {
+        price_dp[i] = max(price_dp[i], price_dp[j] + choose_k[i - j]);
+      }
+    }
+
+    fout << fixed << setprecision(9)
+         << "Case #" << case_idx << ": " << price_dp[N] << endl;
   }
 
   fout.close();
