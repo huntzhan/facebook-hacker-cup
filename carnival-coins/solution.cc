@@ -72,21 +72,21 @@ int main() {
       }
     }
 
-    vector<double> price_dp(N + 1);
+    vector<double> prize_dp(N + 1);
     // init.
     for (int i = 0; i < K; ++i) {
-      price_dp[i] = 0.0;
+      prize_dp[i] = 0.0;
     }
-    // price_dp[i] = max(price_dp[j] + choose_k[i - j], 0 <= j < i).
+    // prize_dp[i] = max(prize_dp[j] + choose_k[i - j], 0 <= j < i).
     for (int i = K; i <= N; ++i) {
-      price_dp[i] = choose_k[i];
+      prize_dp[i] = choose_k[i];
       for (int j = K; j < i; ++j) {
-        price_dp[i] = max(price_dp[i], price_dp[j] + choose_k[i - j]);
+        prize_dp[i] = max(prize_dp[i], prize_dp[j] + choose_k[i - j]);
       }
     }
 
     fout << fixed << setprecision(9)
-         << "Case #" << case_idx << ": " << price_dp[N] << endl;
+         << "Case #" << case_idx << ": " << prize_dp[N] << endl;
   }
 
   fout.close();
