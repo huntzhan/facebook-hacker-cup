@@ -37,12 +37,36 @@ const string kOutputFilename = "output.txt";
 ifstream fin(kInputFilename);
 ofstream fout(kOutputFilename);
 
+inline
 int CountBits(unsigned int x) {
-  int c = 0;
-  for (; x; ++c) {
-    x = x & (x - 1);
+  // int c = 0;
+  // for (; x; ++c) {
+  //   x = x & (x - 1);
+  // }
+  // return c;
+  return __builtin_popcount(x);
+}
+
+// promise: x is power of 2.
+inline
+int Log2(unsigned int x) {
+  // static const int MultiplyDeBruijnBitPosition2[32] = {
+  //   0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 
+  //   31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
+  // };
+  // return MultiplyDeBruijnBitPosition2[(uint32_t)(x * 0x077CB531U) >> 27];
+  return __builtin_ctz(x);
+}
+
+inline
+int TourmentSizeToRank(const int size, const int round_offset, const int N) {
+  int round;
+  if (size == INT_MAX) {
+    round = round_offset;
+  } else {
+    round = Log2(N) - Log2(size) + 1 + round_offset;
   }
-  return c;
+  return round == 1? 1 : 1 + (1 << (round - 2));
 }
 
 int main() {
@@ -89,13 +113,15 @@ int main() {
         int b2 = b ^ b1;
         // now, b1, b2 are valid subsets.
 
-        // i: winner of b1.
-        // j: winner of b2.
-        for (int i = 0; i < N; ++i) {
-          for (int j = 0; j < N; ++j) {
+        for (int wi = b1; wi != 0; wi = wi & (wi - 1)) {
+          int i = Log2(wi & -wi);
+          for (int wj = b2; wj != 0; wj = wj & (wj - 1)) {
+            int j = Log2(wj & -wj);
+
             if (!dp[b1][i] || !dp[b2][j]) {
               continue;
             }
+
             if (W[i][j]) {
               dp[b][i] = true;
               max_tourments[i] = max(max_tourments[i], b_cnt);
@@ -110,22 +136,12 @@ int main() {
       }
     }
 
-    unordered_map<int, int> size_round_mapping;
-    size_round_mapping[INT_MAX] = 0;
-    for (int k = log2(N), round = 1; k >= 0; --k, ++round) {
-      size_round_mapping[1 << k] = round;
-    }
-    vector<int> round_rank_mapping(static_cast<int>(log2(N) + 2));
-    round_rank_mapping[1] = 1;
-    for (int i = 0; i < log2(N); ++i) {
-      round_rank_mapping[i + 2] = 1 + (1 << i);
-    }
-
     fout << "Case #" << case_idx << ":" << endl;
     for (int i = 0; i < N; ++i) {
-      int r1 = size_round_mapping[max_tourments[i]];
-      int r2 = size_round_mapping[min_tourments[i]] + 1;
-      fout << round_rank_mapping[r1] << " " << round_rank_mapping[r2] << endl;
+      fout << TourmentSizeToRank(max_tourments[i], 0, N)
+           << " "
+           << TourmentSizeToRank(min_tourments[i], 1, N)
+           << endl;
     }
   }
 
